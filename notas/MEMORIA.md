@@ -64,6 +64,10 @@ pescado 9,2% · ovina 0,8% (vacuna+avícola ≈ 74%).
 - **Ajuste fino** (tras confirmar que corrió bien): las 4 figuras anuales de la OCDE
   llevan las etiquetas de año a **45°** con anclaje a la derecha (en `_year_xticks`), para
   que 2025 y 2026 no se solapen.
+- **Fig 5 y 6 (series mensuales)**: la anotación de mín./máx. usa **offset adaptativo**
+  (`_relx` en `_serie_con_gestiones`): si el extremo cae cerca del borde derecho, la caja
+  se coloca hacia la **izquierda**. Elimina el margen blanco a la derecha y la flecha
+  diagonal larga cuando el máximo/mínimo está en 2026 (borde del gráfico).
 
 ## Pendientes / posibles mejoras
 

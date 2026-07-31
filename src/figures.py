@@ -218,16 +218,27 @@ def _serie_con_gestiones(df, col, ylabel, name, money=False) -> Path:
     ax.scatter([xmin_p], [ymin], s=30, color="green", zorder=6)
     lab_max = C.fmt_money_ar(ymax, 0) if money else f"{ymax:.1f} kg"
     lab_min = C.fmt_money_ar(ymin, 0) if money else f"{ymin:.1f} kg"
-    ax.annotate(f"Máximo: {lab_max}", xy=(xmax_p, ymax), xytext=(10, -90),
+
+    # Offset adaptativo: si el extremo está cerca del borde derecho, la caja va
+    # hacia la IZQUIERDA (evita margen blanco y una flecha diagonal muy larga).
+    _lo = mdates.date2num(xmin)
+    _span = mdates.date2num(xmax) - _lo
+    def _relx(xp):
+        return (mdates.date2num(xp) - _lo) / _span
+
+    off_max, ha_max = ((-95, -55), "right") if _relx(xmax_p) > 0.7 else ((10, -90), "left")
+    off_min, ha_min = ((-95, 55), "right") if _relx(xmin_p) > 0.7 else ((-10, 60), "right")
+
+    ax.annotate(f"Máximo: {lab_max}", xy=(xmax_p, ymax), xytext=off_max,
                 textcoords="offset points", fontsize=9,
                 bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="red", alpha=0.95),
                 arrowprops=dict(arrowstyle="->", lw=1, color="red"),
-                ha="left", va="bottom", zorder=7, annotation_clip=False)
-    ax.annotate(f"Mínimo: {lab_min}", xy=(xmin_p, ymin), xytext=(-10, 60),
+                ha=ha_max, va="bottom", zorder=7, annotation_clip=False)
+    ax.annotate(f"Mínimo: {lab_min}", xy=(xmin_p, ymin), xytext=off_min,
                 textcoords="offset points", fontsize=9,
                 bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="green", alpha=0.95),
                 arrowprops=dict(arrowstyle="->", lw=1, color="green"),
-                ha="right", va="top", zorder=7, annotation_clip=False)
+                ha=ha_min, va="top", zorder=7, annotation_clip=False)
 
     ax.set_xlabel("")
     ax.set_ylabel(ylabel)
