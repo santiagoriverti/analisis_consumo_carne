@@ -102,10 +102,73 @@ def run_all(descargar_oecd: bool = True, verbose: bool = True) -> dict:
         log(f"  (Aviso) No se pudo generar la figura de índices de exportación: {e}")
 
     # --- 6. Guardar dataframes de datos procesados ----------------------
+    base100 = consumo_arg.div(consumo_arg.loc[C.YEAR_MIN]).mul(100)
+    composicion = _composicion(consumo_arg, C.COMPOSITION_YEAR)
     manifest["dataframes"] = {
-        "consumo_arg": consumo_arg, "intl": intl,
-        "asado_real": asado_real, "kg_df": kg_df,
+        "consumo_arg": consumo_arg, "intl": intl, "base100": base100,
+        "composicion": composicion, "asado_real": asado_real, "kg_df": kg_df,
         "exportaciones": exp_abs, "relativos": rel,
     }
+
+    # --- 7. Excel consolidado con todos los resultados ------------------
+    log("-> Exportando Excel consolidado de resultados...")
+    xls = exportar_resultados_excel(manifest)
+    manifest["datos"]["resultados_excel"] = xls
+
     log(f"OK: Listo. {len(f)} figuras y {len(manifest['tablas'])} tablas en {C.OUTPUTS}")
     return manifest
+
+
+def _composicion(consumo_arg: pd.DataFrame, year: int) -> pd.DataFrame:
+    """Composición porcentual del consumo de carne para un año."""
+    vals = consumo_arg.loc[year].dropna()
+    out = vals.rename("kg_per_capita").to_frame()
+    out["participacion_%"] = (vals / vals.sum() * 100).round(2)
+    return out
+
+
+def exportar_resultados_excel(manifest: dict, path=None):
+    """
+    Genera un único Excel con TODAS las series y resultados, ordenados por hoja.
+    Se guarda en outputs/ para que quede dentro del .zip de descarga.
+    """
+    C.ensure_dirs()
+    if path is None:
+        path = C.OUTPUTS / "resultados_consumo_carne.xlsx"
+    d = manifest["dataframes"]
+    t = manifest["tablas_df"]
+
+    meta = pd.DataFrame({
+        "clave": ["proyecto", "fuente_OCDE", "dataflow_OCDE", "deflactor_base",
+                  "mes_objetivo_series_mensuales", "generado", "anio_min", "anio_max"],
+        "valor": ["Análisis del consumo de carne en Argentina - INECO (UADE)",
+                  "OECD-FAO Agricultural Outlook (API SDMX)", C.OECD_DATAFLOW,
+                  "$ de " + C.REF_DATE.strftime("%m-%Y"),
+                  C.PROJECT_TO.strftime("%m-%Y"),
+                  pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"), C.YEAR_MIN, C.YEAR_MAX],
+    })
+
+    def _fecha(df):
+        df = df.copy()
+        if "periodo" in df.columns:
+            df["periodo"] = pd.to_datetime(df["periodo"]).dt.strftime("%Y-%m")
+        return df
+
+    with pd.ExcelWriter(path, engine="openpyxl") as xw:
+        meta.to_excel(xw, sheet_name="00_metadata", index=False)
+        d["consumo_arg"].to_excel(xw, sheet_name="01_consumo_OCDE_arg")
+        d["intl"].to_excel(xw, sheet_name="02_consumo_OCDE_intl")
+        d["base100"].round(2).to_excel(xw, sheet_name="03_consumo_base100_arg")
+        d["composicion"].to_excel(xw, sheet_name="04_composicion")
+        _fecha(d["asado_real"][["periodo", "asado", "asado_real"]]).to_excel(
+            xw, sheet_name="05_precio_asado", index=False)
+        cols_kg = ["periodo", "remuneracion_des", "asado", "kg_asado_por_salario", "proyectado"]
+        _fecha(d["kg_df"][[c for c in cols_kg if c in d["kg_df"].columns]]).to_excel(
+            xw, sheet_name="06_esfuerzo_salarial", index=False)
+        d["exportaciones"].to_excel(xw, sheet_name="07_exportaciones", index=False)
+        _fecha(d["relativos"]).to_excel(xw, sheet_name="08_relativos", index=False)
+        t["tabla1"].to_excel(xw, sheet_name="09_tabla1_min_max_prom", index=False)
+        t["tabla5"].to_excel(xw, sheet_name="10_tabla5_asado_real", index=False)
+        t["tabla7"].to_excel(xw, sheet_name="11_tabla7_esfuerzo", index=False)
+
+    return path

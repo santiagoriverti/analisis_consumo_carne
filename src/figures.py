@@ -97,21 +97,28 @@ def consumo_base100(consumo_arg, base_year: int = 1990) -> Path:
     return _save(fig, "evolucion_carne_vacuna")
 
 
-def composicion_torta(consumo_arg, year: int = C.YEAR_MAX) -> Path:
+def composicion_torta(consumo_arg, year: int = C.COMPOSITION_YEAR) -> Path:
     """Figura: composición del consumo de carne (torta) para un año dado."""
     vals = consumo_arg.loc[year].dropna()
     vals = vals[vals > 0]
+    total = vals.sum()
     colors = [C.MEAT_COLORS.get(m, "#999999") for m in vals.index]
     fig, ax = plt.subplots(figsize=(8, 8))
     wedges, _texts, autotexts = ax.pie(
         vals.values, labels=vals.index, colors=colors,
         autopct=lambda p: f"{p:.1f}%".replace(".", ","),
-        startangle=90, counterclock=False,
+        startangle=90, counterclock=False, pctdistance=0.75,
         wedgeprops=dict(edgecolor="white", linewidth=1.5),
         textprops=dict(fontsize=12),
     )
-    for at in autotexts:
-        at.set_color("white")
+    # Porciones chicas (<3%): sacar el % hacia afuera para que no se solapen.
+    for at, v in zip(autotexts, vals.values):
+        if v / total < 0.03:
+            x, y = at.get_position()
+            at.set_position((x * 1.7, y * 1.7))
+            at.set_color("black")
+        else:
+            at.set_color("white")
         at.set_fontweight("bold")
     ax.set_aspect("equal")
     fig.tight_layout()

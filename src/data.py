@@ -43,31 +43,131 @@ def _to_month_start(s: pd.Series) -> pd.Series:
 # ---------------------------------------------------------------------------
 # INECO_carne.xlsx
 # ---------------------------------------------------------------------------
-def precio_asado() -> pd.DataFrame:
-    """Precio nominal mensual del kg de asado. Columnas: periodo, asado."""
-    df = _read_excel("INECO_carne.xlsx", sheet_name="precio_carne")
-    df = df[["fecha", "asado"]].copy()
+def _ipcv_asado() -> pd.DataFrame:
+    """Precio nominal del asado según IPCVA (llega hasta jun-2026). periodo, asado."""
+    df = _read_excel(C.IPCV_FILE, sheet_name="Hoja1")[["fecha", "asado"]].copy()
     df["periodo"] = _to_month_start(df["fecha"])
     df["asado"] = pd.to_numeric(df["asado"], errors="coerce")
-    return df.dropna(subset=["periodo", "asado"])[["periodo", "asado"]].reset_index(drop=True)
+    return df.dropna(subset=["periodo", "asado"])[["periodo", "asado"]]
+
+
+def precio_asado() -> pd.DataFrame:
+    """
+    Precio nominal mensual del kg de asado (1996 → jun-2026).
+
+    Base: INECO_carne (1996 → dic-2025). Se extiende con IPCVA para los meses
+    posteriores (ene–jun 2026), que es la MISMA serie (coinciden en dic-2025).
+    """
+    base = _read_excel("INECO_carne.xlsx", sheet_name="precio_carne")[["fecha", "asado"]].copy()
+    base["periodo"] = _to_month_start(base["fecha"])
+    base["asado"] = pd.to_numeric(base["asado"], errors="coerce")
+    base = base.dropna(subset=["periodo", "asado"])[["periodo", "asado"]]
+
+    last = base["periodo"].max()
+    ext = _ipcv_asado()
+    ext = ext[(ext["periodo"] > last) & (ext["periodo"] <= C.PROJECT_TO)]
+    out = pd.concat([base, ext], ignore_index=True).sort_values("periodo")
+    return out.reset_index(drop=True)
 
 
 def remuneraciones() -> pd.DataFrame:
-    """Remuneración promedio (desestacionalizada). Columnas: periodo, remuneracion_des."""
-    df = _read_excel("INECO_carne.xlsx", sheet_name="remuneraciones")
-    df = df[["periodo", "remuneracion_des"]].copy()
+    """
+    Remuneración promedio desestacionalizada (1996 → jun-2026).
+
+    Base: INECO_carne (1996 → dic-2025). Los meses faltantes hasta ``PROJECT_TO``
+    se proyectan aplicando la media móvil (``SALARY_MA_WINDOW`` meses) de la
+    variación mensual reciente. Columna ``proyectado`` marca el dato estimado.
+    """
+    df = _read_excel("INECO_carne.xlsx", sheet_name="remuneraciones")[["periodo", "remuneracion_des"]].copy()
     df["periodo"] = _to_month_start(df["periodo"])
     df["remuneracion_des"] = pd.to_numeric(df["remuneracion_des"], errors="coerce")
-    return df.dropna(subset=["periodo", "remuneracion_des"]).reset_index(drop=True)
+    df = df.dropna(subset=["periodo", "remuneracion_des"]).sort_values("periodo").reset_index(drop=True)
+    df["proyectado"] = False
+
+    last = df["periodo"].max()
+    if last < C.PROJECT_TO:
+        growth = df["remuneracion_des"].pct_change().dropna()
+        g = float(growth.tail(C.SALARY_MA_WINDOW).mean())
+        val = float(df["remuneracion_des"].iloc[-1])
+        m = last
+        nuevos = []
+        while m < C.PROJECT_TO:
+            m = m + pd.offsets.MonthBegin(1)
+            val = val * (1 + g)
+            nuevos.append({"periodo": m, "remuneracion_des": val, "proyectado": True})
+        df = pd.concat([df, pd.DataFrame(nuevos)], ignore_index=True)
+    return df.reset_index(drop=True)
+
+
+def ipc_indec_nacional() -> pd.DataFrame:
+    """IPC Nacional nivel general del INDEC (real hasta jun-2026). periodo, indec."""
+    raw = _read_excel(C.IPC_INDEC_FILE, sheet_name="Índices IPC Cobertura Nacional", header=None)
+    fechas = pd.to_datetime(raw.iloc[5, 1:], errors="coerce")
+    row_idx = next(i for i in range(6, 25) if str(raw.iloc[i, 0]).strip() == "Nivel general")
+    vals = pd.to_numeric(raw.iloc[row_idx, 1:], errors="coerce")
+    s = pd.DataFrame({"periodo": fechas.values, "indec": vals.values}).dropna()
+    s["periodo"] = pd.to_datetime(s["periodo"]).dt.to_period("M").dt.to_timestamp()
+    return s.sort_values("periodo").reset_index(drop=True)
+
+
+def rem_ipc_var() -> pd.DataFrame:
+    """Expectativas REM de var.% mensual del IPC nivel general (columna Promedio). periodo, var_pct."""
+    raw = _read_excel(C.REM_FILE, sheet_name="Cuadros de resultados", header=None)
+    start = next(i for i in range(len(raw)) if "IPC nivel general" in str(raw.iloc[i, 0]))
+    filas = []
+    for i in range(start + 1, min(start + 40, len(raw))):
+        d = pd.to_datetime(raw.iloc[i, 0], errors="coerce")
+        if pd.isna(d):
+            if filas:
+                break
+            continue
+        prom = pd.to_numeric(raw.iloc[i, 3], errors="coerce")  # col 3 = Promedio
+        if pd.notna(prom):
+            filas.append({"periodo": d.to_period("M").to_timestamp(), "var_pct": float(prom)})
+    return pd.DataFrame(filas)
 
 
 def ipc_general() -> pd.DataFrame:
-    """Índice de Precios al Consumidor (nivel general, empalme largo). Columnas: periodo, general."""
-    df = _read_excel("INECO_carne.xlsx", sheet_name="ipc")
-    df = df[["periodo", "general"]].copy()
+    """
+    IPC nivel general (empalme largo, 1996 → jun-2026). Columnas: periodo, general, origen.
+
+    Base: INECO_carne (1996 → dic-2025, ``origen='real'``). Se extiende con el IPC
+    Nacional real del INDEC (``sh_ipc``, empalmado por nivel — coincide en dic-2025)
+    hasta jun-2026. Si quedara algún mes posterior sin dato oficial, se proyecta con
+    el REM (``origen='proyeccion_REM'``); con ``PROJECT_TO=jun-2026`` no hace falta.
+    """
+    df = _read_excel("INECO_carne.xlsx", sheet_name="ipc")[["periodo", "general"]].copy()
     df["periodo"] = _to_month_start(df["periodo"])
-    df["general"] = pd.to_numeric(df["general"], errors="coerce").ffill()
-    return df.dropna(subset=["periodo", "general"]).reset_index(drop=True)
+    df["general"] = pd.to_numeric(df["general"], errors="coerce")
+    # NO usar ffill: dejaría los meses NaN de 2026 planos y bloquearía el empalme
+    # con el INDEC real. Nos quedamos con el último dato real (dic-2025).
+    df = df.dropna(subset=["periodo", "general"]).sort_values("periodo").reset_index(drop=True)
+    df["origen"] = "real"
+
+    # 1) Empalme con INDEC real (mismo índice; se re-escala por si el nivel difiere).
+    last = df["periodo"].max()
+    indec = ipc_indec_nacional()
+    if last in set(indec["periodo"]):
+        scale = float(df["general"].iloc[-1]) / float(indec.loc[indec["periodo"] == last, "indec"].iloc[0])
+        ext = indec[(indec["periodo"] > last) & (indec["periodo"] <= C.PROJECT_TO)].copy()
+        ext["general"] = ext["indec"] * scale
+        ext["origen"] = "real"
+        df = pd.concat([df, ext[["periodo", "general", "origen"]]], ignore_index=True)
+
+    # 2) REM para meses aún faltantes (jul-2026 en adelante; dormant hasta jun-2026).
+    last = df["periodo"].max()
+    if last < C.PROJECT_TO:
+        rem = rem_ipc_var().set_index("periodo")["var_pct"]
+        val = float(df["general"].iloc[-1]); m = last; nuevos = []
+        while m < C.PROJECT_TO:
+            m = m + pd.offsets.MonthBegin(1)
+            if m not in rem.index:
+                break
+            val = val * (1 + rem.loc[m] / 100.0)
+            nuevos.append({"periodo": m, "general": val, "origen": "proyeccion_REM"})
+        if nuevos:
+            df = pd.concat([df, pd.DataFrame(nuevos)], ignore_index=True)
+    return df.sort_values("periodo").reset_index(drop=True)
 
 
 # ---------------------------------------------------------------------------

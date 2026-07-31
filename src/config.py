@@ -55,15 +55,31 @@ TABLES_DIR = OUTPUTS / "tablas"
 # ¿Tenemos los archivos fuente en disco? (modo local). Si no, se leen por URL.
 DATA_IS_LOCAL = (DOCS / "INECO_carne.xlsx").exists()
 
-# Fecha de referencia para deflactar precios a pesos constantes.
+# Fecha de referencia para deflactar precios a pesos constantes ($ de dic-2025).
 REF_DATE = pd.Timestamp("2025-12-01")
 
-# Último año observado que se usa para el análisis (la OCDE proyecta hasta 2035).
+# Mes objetivo hasta el que se extienden las series MENSUALES (asado, IPC, salario).
+# Los datos posteriores al último dato real se completan con dato oficial (INDEC/IPCVA)
+# o, en su defecto, con proyección (media móvil para salarios; REM para IPC).
+PROJECT_TO = pd.Timestamp("2026-06-01")
+
+# Rango de años del análisis. La OCDE (anual) se pide hasta 2026 inclusive.
 YEAR_MIN = 1990
-YEAR_MAX = 2025
+YEAR_MAX = 2026
+
+# Año usado para la torta de composición del consumo.
+COMPOSITION_YEAR = 2026
+
+# Ventana (meses) de la media móvil para proyectar el salario faltante.
+SALARY_MA_WINDOW = 6
 
 # Resolución de las figuras exportadas (informe INECO: 600 dpi).
 DPI = 600
+
+# Archivos fuente adicionales para extender/proyectar series 2026.
+IPCV_FILE = "ipcv_precios_carne_pollo.xlsx"       # asado/pollo con 2026 real (IPCVA)
+IPC_INDEC_FILE = "sh_ipc_07_26.xls"               # IPC Nacional INDEC (real hasta jun-2026)
+REM_FILE = "tablas-relevamiento-expectativas-mercado-jun-2026.xlsx"  # expectativas de mercado
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +135,7 @@ GESTIONES: list[tuple[str, pd.Timestamp, pd.Timestamp, str]] = [
     ("Duhalde + NK + CFK", pd.Timestamp("2002-01-01"), pd.Timestamp("2015-12-31"), "#00b0ff"),
     ("Macri",              pd.Timestamp("2016-01-01"), pd.Timestamp("2019-12-31"), "#FFD700"),
     ("A. Fernández",       pd.Timestamp("2020-01-01"), pd.Timestamp("2023-12-31"), "#00b0ff"),
-    ("Milei",              pd.Timestamp("2024-01-01"), pd.Timestamp("2025-12-31"), "#8000ff"),
+    ("Milei",              pd.Timestamp("2024-01-01"), pd.Timestamp("2026-12-31"), "#8000ff"),
 ]
 
 

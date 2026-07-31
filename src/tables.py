@@ -58,18 +58,21 @@ def _stats_por_gestion(df: pd.DataFrame, col: str) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 def tabla_min_max_prom_carne(consumo_arg: pd.DataFrame):
     """
-    Min/máx/promedio por tipo de carne (1990-2025). Ordenada por promedio desc.
+    Min/máx/promedio por tipo de carne (1990-2026). Ordenada por promedio desc.
+    Mismo layout que la Tabla 5 (columnas de fecha). Como la serie de la OCDE es
+    ANUAL, la "fecha" es el año en que ocurre el mínimo/máximo.
     Devuelve (DataFrame_legible, latex_str).
     """
+    rango = f"{consumo_arg.index.min()}-{consumo_arg.index.max()}"
     rows = []
     for meat in consumo_arg.columns:
         s = consumo_arg[meat].dropna()
         rows.append({
             "Producto": meat,
             "Mínimo": s.min(),
-            "Año mín.": int(s.idxmin()),
+            "Fecha mín.": str(int(s.idxmin())),
             "Máximo": s.max(),
-            "Año máx.": int(s.idxmax()),
+            "Fecha máx.": str(int(s.idxmax())),
             "Promedio": s.mean(),
         })
     df = pd.DataFrame(rows).sort_values("Promedio", ascending=False).reset_index(drop=True)
@@ -78,18 +81,18 @@ def tabla_min_max_prom_carne(consumo_arg: pd.DataFrame):
     for c in ["Mínimo", "Máximo", "Promedio"]:
         disp[c] = disp[c].map(lambda v: C.fmt_num_ar(v, 2))
 
-    # LaTeX
+    # LaTeX (layout análogo a la Tabla 5: l r l r l r)
     body = ""
     for _, r in df.iterrows():
         body += (
-            f"{r['Producto']:<13} & {C.fmt_num_ar(r['Mínimo'], 2)} & {int(r['Año mín.'])} "
-            f"& {C.fmt_num_ar(r['Máximo'], 2)} & {int(r['Año máx.'])} "
+            f"{r['Producto']:<13} & {C.fmt_num_ar(r['Mínimo'], 2)} & {r['Fecha mín.']} "
+            f"& {C.fmt_num_ar(r['Máximo'], 2)} & {r['Fecha máx.']} "
             f"& {C.fmt_num_ar(r['Promedio'], 2)} \\\\\n"
         )
     latex = (
         "\\begin{table}[H]\n\\centering\n\\renewcommand{\\arraystretch}{1.15}\n"
-        "\\caption{Valores mínimo, máximo y promedio por tipo de carne (1990-2025)}\n"
-        "\\begin{tabular}{@{}l r r r r r@{}}\n\\toprule\n"
+        f"\\caption{{Valores mínimo, máximo y promedio por tipo de carne ({rango})}}\n"
+        "\\begin{tabular}{@{}l r l r l r@{}}\n\\toprule\n"
         "\\textbf{Producto} & \\textbf{Mínimo} & \\textbf{Año mín.} & "
         "\\textbf{Máximo} & \\textbf{Año máx.} & \\textbf{Promedio} \\\\\n\\midrule\n"
         f"{body}\\bottomrule\n\\end{{tabular}}\n\\vspace{{0.3cm}}\n"
