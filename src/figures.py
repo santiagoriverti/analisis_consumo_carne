@@ -56,13 +56,20 @@ def _shade_gestiones(ax, xmin, xmax):
     return handles
 
 
-def _year_xticks(ax, years, step: int = 5) -> None:
-    """Ticks cada `step` años garantizando que el último año quede etiquetado."""
+def _year_xticks(ax, years, step: int = 5, rotation: int = 45) -> None:
+    """
+    Ticks cada `step` años garantizando que el último año quede etiquetado.
+    Rota las etiquetas (45° por defecto) y las ancla a la derecha para que el
+    último año no se solape con el anterior (p. ej. 2025 vs 2026).
+    """
     lo, hi = int(min(years)), int(max(years))
     yrs = list(range(lo, hi + 1, step))
     if hi not in yrs:
         yrs.append(hi)
     ax.set_xticks(yrs)
+    ax.tick_params(axis="x", labelrotation=rotation)
+    for lbl in ax.get_xticklabels():
+        lbl.set_horizontalalignment("right")
 
 
 # ---------------------------------------------------------------------------

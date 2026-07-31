@@ -109,7 +109,8 @@ Todas las funciones leen de `docs/` en local, o por **URL cruda de GitHub** en C
 ## 6.ter Ejes de las figuras
 
 - `figures._year_xticks(ax, years)` fuerza el tick del **último año** en las 4 figuras
-  anuales de la OCDE (para que 2026 quede etiquetado pese al paso de 5 años).
+  anuales de la OCDE (para que 2026 quede etiquetado pese al paso de 5 años) y rota las
+  etiquetas **45°** con anclaje a la derecha (evita el solape 2025/2026).
 - Las series mensuales usan `mdates.YearLocator(1)`; en `relativos` se fija
   `set_xlim(min, max)` para no mostrar un tick de año posterior al último dato.
 

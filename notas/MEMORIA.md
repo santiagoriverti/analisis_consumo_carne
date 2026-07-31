@@ -61,6 +61,9 @@ pescado 9,2% · ovina 0,8% (vacuna+avícola ≈ 74%).
 - Nota importante: para tomar estos arreglos, el usuario debe **reabrir el notebook desde
   el link de Colab** (Colab recarga el .ipynb desde GitHub); re-ejecutar el ya abierto
   usaría la celda de setup vieja.
+- **Ajuste fino** (tras confirmar que corrió bien): las 4 figuras anuales de la OCDE
+  llevan las etiquetas de año a **45°** con anclaje a la derecha (en `_year_xticks`), para
+  que 2025 y 2026 no se solapen.
 
 ## Pendientes / posibles mejoras
 
