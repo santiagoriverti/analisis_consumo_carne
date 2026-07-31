@@ -40,6 +40,16 @@ Flujo previsto por el usuario (Santiago Riverti):
   - Tabla 1 reestructurada al layout de la Tabla 5.
   - Se agregó el **Excel consolidado** de resultados.
   - Se crearon estos archivos de memoria.
+- **Sesión 3**: correcciones tras la primera corrida en Colab:
+  - **Setup del notebook idempotente** (ruta fija + `git reset --hard origin/main`): antes
+    reusaba un clone viejo (corría código de la sesión 1) y anidaba carpetas.
+  - **Fix del error `FileNotFoundError: 'outputs'`** en la celda del ZIP (rutas absolutas).
+  - Figuras anuales de la OCDE con tick **2026** y etiquetas a **45°** (2025/2026 sin solapar);
+    relativos sin tick "2027".
+- **Sesión 4**: pulido de las Figuras 5 y 6 — anotación de mín./máx. con **offset adaptativo**
+  (cuando el extremo cae en el borde 2026, la caja va a la izquierda; sin margen blanco).
+
+> El detalle cronológico completo y el estado vivo está en `MEMORIA.md`.
 
 ## Fuentes de datos (carpeta `docs/`)
 
@@ -75,3 +85,30 @@ Flujo previsto por el usuario (Santiago Riverti):
 Con IPC e IPCVA reales de 2026, el **máximo real del asado pasó a marzo-2026 (~$17.011)**,
 superando el pico previo de dic-2015 ($15.657). El poder de compra del salario en kg de
 asado cae a ~108 kg (mín. histórico) en mar-2026. Son cambios legítimos por datos nuevos.
+
+## Cómo retomar en otra PC / otra sesión
+
+**Requisitos**: Python 3.11+ con `pip`, y `git`.
+
+```bash
+git clone https://github.com/santiagoriverti/analisis_consumo_carne.git
+cd analisis_consumo_carne
+pip install -r requirements.txt
+python -c "from src import pipeline; pipeline.run_all()"
+```
+
+Eso descarga la OCDE por API y genera todo en `outputs/` (figuras 600 dpi, tablas `.tex`,
+Excel consolidado). Los archivos fuente (asado, IPC, salario, exportaciones, REM) ya están
+versionados en `docs/`, así que no hay que conseguir nada aparte.
+
+**Con Claude en la nueva sesión**: al abrir el repo, Claude Code lee `CLAUDE.md`
+automáticamente. Pedile que lea también `notas/` (este archivo, `MEMORIA.md` y
+`ESPECIFICACIONES_TECNICAS.md`) y va a tener todo el contexto.
+
+**Para actualizar a un período nuevo** (ej. cuando salgan datos de jul-2026 o 2027):
+seguí el checklist de la sección 8 de `ESPECIFICACIONES_TECNICAS.md` (actualizar Excel en
+`docs/`, tocar `PROJECT_TO`/`REF_DATE`/`YEAR_MAX`/`COMPOSITION_YEAR` y el fin de la gestión
+vigente en `config.py`, correr `run_all()`, verificar, commit + push).
+
+**Reglas del repo**: commits solo bajo *Santiago Riverti* (sin atribución de Claude);
+`outputs/` y `docs/oecd_consumo_carne.xlsx` no se versionan; figuras a 600 dpi.

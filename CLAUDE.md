@@ -46,5 +46,14 @@ Genera `outputs/figuras/*.png`, `outputs/tablas/*.tex` y
 
 ## Estado actual
 
-Todo funciona y está actualizado a **jun-2026**. Detalle de decisiones, datos y
-pendientes en `notas/MEMORIA.md` y `notas/ESPECIFICACIONES_TECNICAS.md`.
+Todo funciona y está **actualizado a jun-2026**, con las figuras y tablas revisadas y
+aprobadas por el usuario. Listo para redactar el informe.
+
+- **Contexto y objetivo** → `notas/CONTEXTO.md` (incluye "Cómo retomar en otra PC/sesión").
+- **Bitácora, resultados y pendientes** → `notas/MEMORIA.md`.
+- **Detalle técnico** (API OCDE, empalmes/proyecciones, checklist de actualización) →
+  `notas/ESPECIFICACIONES_TECNICAS.md`.
+
+**Pendiente principal**: actualizar las cifras de la **prosa** del informe `.tex` contra
+los resultados nuevos (las tablas/figuras ya salen actualizadas). Ver pendientes en
+`notas/MEMORIA.md`.
