@@ -19,6 +19,10 @@ se descarga un `.zip` con las figuras (600 dpi) y las tablas en LaTeX.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/santiagoriverti/analisis_consumo_carne/blob/main/notebooks/analisis_consumo_carne.ipynb)
 
+> **Al re-ejecutar tras un cambio**: abrí el notebook **desde este badge** (Colab recarga
+> el `.ipynb` desde GitHub). La celda de setup ya trae sola la última versión del código y
+> los datos (`git reset --hard origin/main`), así que no hace falta reiniciar el entorno.
+
 ## Productos que genera
 
 | # | Producto | Fuente | Cobertura |

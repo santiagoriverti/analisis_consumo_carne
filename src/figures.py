@@ -56,6 +56,15 @@ def _shade_gestiones(ax, xmin, xmax):
     return handles
 
 
+def _year_xticks(ax, years, step: int = 5) -> None:
+    """Ticks cada `step` años garantizando que el último año quede etiquetado."""
+    lo, hi = int(min(years)), int(max(years))
+    yrs = list(range(lo, hi + 1, step))
+    if hi not in yrs:
+        yrs.append(hi)
+    ax.set_xticks(yrs)
+
+
 # ---------------------------------------------------------------------------
 # OCDE — consumo nacional
 # ---------------------------------------------------------------------------
@@ -69,6 +78,7 @@ def consumo_per_capita(consumo_arg) -> Path:
     ax.set_ylabel("Kg por habitante por año")
     ax.grid(True, linewidth=0.6, alpha=0.5)
     ax.set_xlim(consumo_arg.index.min(), consumo_arg.index.max())
+    _year_xticks(ax, consumo_arg.index)
     ax.margins(y=0.05)
     ax.legend(title="Tipo de carne", ncol=2, frameon=True, loc="upper right")
     fig.tight_layout()
@@ -90,6 +100,7 @@ def consumo_base100(consumo_arg, base_year: int = 1990) -> Path:
     ax.set_ylabel(f"Índice base 100 = {base_year}")
     ax.grid(True, linewidth=0.6, alpha=0.5)
     ax.set_xlim(consumo_arg.index.min(), consumo_arg.index.max())
+    _year_xticks(ax, consumo_arg.index)
     ax.margins(y=0.05)
     ax.legend(title="Tipo de carne", ncol=2, frameon=True, loc="upper left")
     fig.tight_layout()
@@ -144,6 +155,7 @@ def vacuno_internacional_absoluto(intl) -> Path:
     ax.set_ylabel("Kg por habitante por año")
     ax.grid(True, linewidth=0.6, alpha=0.5)
     ax.set_xlim(intl.index.min(), intl.index.max())
+    _year_xticks(ax, intl.index)
     ax.legend(ncol=2, frameon=True, fontsize=9, loc="upper right")
     fig.tight_layout()
     _black_frame(fig)
@@ -168,6 +180,7 @@ def vacuno_internacional_base100(intl, base_year: int = 1990) -> Path:
     ax.set_ylabel(f"Índice base 100 = {base_year}")
     ax.grid(True, linewidth=0.6, alpha=0.5)
     ax.set_xlim(intl.index.min(), intl.index.max())
+    _year_xticks(ax, intl.index)
     ax.legend(ncol=2, frameon=True, fontsize=9, loc="upper left")
     fig.tight_layout()
     _black_frame(fig)
@@ -310,6 +323,9 @@ def relativos(rel) -> Path:
     ax.grid(axis="y", linestyle="--", alpha=0.5)
     ax.set_axisbelow(True)
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, p: C.fmt_num_ar(v, 2)))
+    # Limitar el eje al rango real de datos para no mostrar un tick "2027" espurio.
+    ax.set_xlim(rel["periodo"].min(), rel["periodo"].max())
+    ax.margins(x=0)
     ax.xaxis.set_major_locator(mdates.YearLocator(1))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax.tick_params(axis="x", labelrotation=45)

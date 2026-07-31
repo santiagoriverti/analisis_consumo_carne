@@ -46,6 +46,22 @@ pescado 9,2% · ovina 0,8% (vacuna+avícola ≈ 74%).
 - `pipeline.py`: Excel consolidado `resultados_consumo_carne.xlsx`.
 - Notas de memoria (esta carpeta) + CLAUDE.md.
 
+### Sesión 3 (2026-07-31) — correcciones tras primera corrida en Colab
+- **Bug de la celda de setup del notebook**: el `git clone` no re-clonaba si la carpeta
+  existía → corría **código viejo** (Tabla 1 salía con formato sesión-1); y al re-ejecutar
+  **anidaba** carpetas (`.../analisis_consumo_carne` x3). Reescrita: ruta FIJA absoluta
+  `/content/analisis_consumo_carne`, `git fetch + reset --hard origin/main` para traer
+  siempre lo último, idempotente. Celda de run: **fuerza re-importación de `src`**.
+- **Error `FileNotFoundError: 'outputs'`** en la última celda: usaba ruta relativa. Ahora
+  usa `C.OUTPUTS` / `C.ROOT` **absolutas** para armar el ZIP.
+- `figures.py`: `_year_xticks` para etiquetar **2026** en las 4 figuras anuales de la OCDE
+  (per cápita, base 100, internacional abs. y base 100). Relativos: `set_xlim` al rango de
+  datos → se elimina el tick **"2027"** espurio.
+- Notebook: caption de exportaciones ahora **dinámico** ("hasta {último año}").
+- Nota importante: para tomar estos arreglos, el usuario debe **reabrir el notebook desde
+  el link de Colab** (Colab recarga el .ipynb desde GitHub); re-ejecutar el ya abierto
+  usaría la celda de setup vieja.
+
 ## Pendientes / posibles mejoras
 
 - [ ] **Exportaciones 2026**: cuando cierre el año (o si se consigue el dato anualizado),
@@ -62,6 +78,10 @@ pescado 9,2% · ovina 0,8% (vacuna+avícola ≈ 74%).
 
 ## Trampas conocidas (no repetir)
 
+- **Colab / setup del notebook**: clonar a una **ruta absoluta fija** y hacer
+  `git reset --hard origin/main`. Un `git clone` guardado por `if not isdir(...)` con ruta
+  relativa (a) corre código viejo y (b) anida carpetas al re-ejecutar. La última celda debe
+  usar rutas **absolutas** (`C.OUTPUTS`), nunca `'outputs'` relativo.
 - No usar `ffill` en el IPC largo: aplana 2026 y arruina la deflación.
 - OCDE es **anual**: no intentar granularidad mensual en la Tabla 1.
 - Las exportaciones absolutas son **anuales**: no meter 2026 parcial como si fuera un año.

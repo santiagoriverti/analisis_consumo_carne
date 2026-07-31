@@ -93,6 +93,26 @@ Todas las funciones leen de `docs/` en local, o por **URL cruda de GitHub** en C
 `04_composicion`, `05_precio_asado`, `06_esfuerzo_salarial` (incluye `proyectado`),
 `07_exportaciones`, `08_relativos`, `09_tabla1`, `10_tabla5`, `11_tabla7`.
 
+## 6.bis Notebook (`notebooks/analisis_consumo_carne.ipynb`)
+
+- **Celda de setup (idempotente)**: en Colab clona a la ruta FIJA
+  `/content/analisis_consumo_carne`; si ya existe, hace
+  `git fetch --depth 1 origin main && git reset --hard origin/main` (trae SIEMPRE lo último,
+  sin anidar). En local, sube por el árbol hasta la carpeta con `src/` y `docs/`.
+- **Celda de run**: borra `src*` de `sys.modules` antes de `from src import pipeline`
+  (fuerza usar el código recién traído, no una versión cacheada).
+- **Celda de descarga**: arma el ZIP con rutas ABSOLUTAS
+  (`shutil.make_archive(str(C.ROOT/'resultados_consumo_carne'),'zip',str(C.OUTPUTS))`).
+- Para que un cambio pusheado tome efecto, **reabrir el notebook desde el link de Colab**
+  (Colab recarga el `.ipynb` desde GitHub).
+
+## 6.ter Ejes de las figuras
+
+- `figures._year_xticks(ax, years)` fuerza el tick del **último año** en las 4 figuras
+  anuales de la OCDE (para que 2026 quede etiquetado pese al paso de 5 años).
+- Las series mensuales usan `mdates.YearLocator(1)`; en `relativos` se fija
+  `set_xlim(min, max)` para no mostrar un tick de año posterior al último dato.
+
 ## 7. Parámetros editables (`src/config.py`)
 
 - `REF_DATE` (base de deflación) — hoy `2025-12-01`.
