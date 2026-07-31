@@ -1,0 +1,17 @@
+# Archivos temporales de Office (candados ~$)
+~$*
+
+# Salidas regenerables (figuras 600 dpi + tablas LaTeX + zip de descarga)
+outputs/
+*.zip
+
+# Datos descargados de la OCDE (se regeneran desde la API en cada corrida)
+docs/oecd_consumo_carne.xlsx
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
