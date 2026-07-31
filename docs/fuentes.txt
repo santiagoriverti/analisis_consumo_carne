@@ -1,0 +1,9 @@
+1. "exportaciones_indices_rubros.xlsx" obtenido de: https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-2-41 archivo: "Índices de valor, precios y cantidades de las exportaciones mensuales por grandes rubros y principales subrubros, desde 2004 en adelante"
+
+2. "sh_ipc_07_26.xlsx" obtenido de https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31 archivo: "Índices y variaciones porcentuales mensuales e interanuales según divisiones de la canasta, bienes y servicios, clasificación de grupos. Diciembre de 2016-junio de 2026"
+
+3. "ipcv_precios_carne_pollo.xlsx" obtenido de https://ipcva.agrositio.com/estadisticas/vista_precios_consumidor2.php
+
+4. "trabajoregistrado_2604_estadisticas.xlsx" obtenido de https://www.argentina.gob.ar/trabajo/estadisticas/situacion-y-evolucion-del-trabajo-registrado
+
+5. consumo de carne por tipo de API https://data-explorer.oecd.org/
